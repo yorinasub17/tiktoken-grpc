@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package tiktoken.v1;
+
+service TiktokenService {
+  rpc NumTokens(NumTokensRequest) returns (NumTokensResponse) {}
+}
+
+// NumTokensRequest represents a request count the number of tokens in a given text using the requested encoding.
+message NumTokensRequest {
+  oneof encoding {
+    string by_name = 1;
+    string by_model_name = 2;
+  }
+
+  string text = 3;
+}
+
+// NumTokensResponse represents the result of the NumTokens RPC call.
+message NumTokensResponse {
+  int32 count = 1;
+}
