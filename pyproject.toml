@@ -33,6 +33,13 @@ serve       = "python main.py"
 test        = "python -m unittest discover -s ./tests"
 fmt         = "python -m black --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./ttsvc"
 "lint:mypy" = "python -m mypy ./ttsvc"
+"lint:fmt"  = "python -m black --check --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./ttsvc"
+
+[tool.poe.tasks.lint]
+shell = """
+poetry run poe lint:mypy \\
+&& poetry run poe lint:fmt
+"""
 
 [tool.poe.tasks.generate]
 shell = """
