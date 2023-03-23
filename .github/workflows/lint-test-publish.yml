@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
 
-      - name: Install poetry
+      - name: install poetry
         run: pipx install poetry
 
       - uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
 
-      - name: Install poetry
+      - name: install poetry
         run: pipx install poetry
 
       - uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # v3.4.0
 
-      - name: Install poetry
+      - name: install poetry
         run: pipx install poetry
 
       - uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
@@ -91,6 +91,7 @@ jobs:
           curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64
           chmod +x container-structure-test-linux-amd64
           mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
+          pip install ggshield
 
       - name: set up qemu
         uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # v2.1.0
@@ -115,61 +116,82 @@ jobs:
         env:
           LOCAL_APP_IMAGE: ${{ steps.build-local.outputs.imageid }}
 
-      ## The rest of the job only runs if on main branch or release tag, and proceeds to publish the image on GHCR
-      ## including signing the image with cosign.
-      #- name: login to GitHub Container Registry
-      #  if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
-      #  uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
-      #  with:
-      #    registry: ghcr.io
-      #    username: ${{ github.actor }}
-      #    password: ${{ secrets.GITHUB_TOKEN }}
+      - name: scan docker images
+        run: |
+          ggshield secret scan docker docker.io/yorinasub17/tiktoken-grpc:test
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
 
-      #- id: meta
-      #  name: extract metadata for docker image tagging
-      #  if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
-      #  uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # v4.3.0
-      #  with:
-      #    images: ghcr.io/yorinasub17/tiktoken-grpc
-      #    tags: |
-      #      type=sha
-      #      type=ref,event=branch
-      #      type=semver,pattern=v{{version}}
-      #      type=semver,pattern=v{{major}}.{{minor}}
-      #      type=semver,pattern=v{{major}}
+      # The rest of the job only runs if on main branch or release tag, and proceeds to publish the image on GHCR
+      # including signing the image with cosign.
+      - name: login to GitHub Container Registry
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
-      #- id: publish
-      #  name: build and publish to ghcr if on main branch or release tag
-      #  if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
-      #  uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4.0.0
-      #  with:
-      #    file: deployments/docker/Dockerfile
-      #    push: true
-      #    tags: ${{ steps.meta.outputs.tags }}
-      #    platforms: linux/amd64,linux/arm64
+      - name: login to Docker Hub
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
+        with:
+          username: yorinasub17
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      #- id: maintag
-      #  name: extract main tag
-      #  if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
-      #  run: |
-      #    if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-      #      tag=main
-      #    else
-      #      # get tag name without tags/refs/ prefix.
-      #      tag="$(echo ${{ github.ref }} | cut -c11-)"
-      #    fi
-      #    echo "maintag=${tag}" >> "$GITHUB_OUTPUT"
+      - id: meta
+        name: extract metadata for docker image tagging
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # v4.3.0
+        with:
+          images: |
+            ghcr.io/yorinasub17/tiktoken-grpc
+            yorinasub17/tiktoken-grpc
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
 
-      #- name: install cosign
-      #  if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
-      #  uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65 # v3.0.1
+      - id: publish
+        name: build and publish to ghcr if on main branch or release tag
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4.0.0
+        with:
+          file: deployments/docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
 
-      #- name: sign images
-      #  if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
-      #  run: |
-      #    cosign sign \
-      #        ghcr.io/yorinasub17/tiktoken-grpc@${{ steps.publish.outputs.digest }} \
-      #        -a sha=${{ github.sha }} \
-      #        -a run_id=${{ github.run_id }} \
-      #        -a run_attempt=${{ github.run_attempt }} \
-      #        -a tag=${{ steps.maintag.outputs.maintag }}
+      - id: maintag
+        name: extract main tag
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            tag=main
+          else
+            # get tag name without tags/refs/ prefix.
+            tag="$(echo ${{ github.ref }} | cut -c11-)"
+          fi
+          echo "maintag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: install cosign
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65 # v3.0.1
+
+      - name: sign images
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/')) }}
+        run: |
+          cosign sign \
+              ghcr.io/yorinasub17/tiktoken-grpc@${{ steps.publish.outputs.digest }} \
+              -a sha=${{ github.sha }} \
+              -a run_id=${{ github.run_id }} \
+              -a run_attempt=${{ github.run_attempt }} \
+              -a tag=${{ steps.maintag.outputs.maintag }}
+          cosign sign \
+              yorinasub17/tiktoken-grpc@${{ steps.publish.outputs.digest }} \
+              -a sha=${{ github.sha }} \
+              -a run_id=${{ github.run_id }} \
+              -a run_attempt=${{ github.run_attempt }} \
+              -a tag=${{ steps.maintag.outputs.maintag }}
