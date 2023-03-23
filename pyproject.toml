@@ -12,12 +12,35 @@ python = "^3.10"
 grpcio = "^1.51.3"
 grpcio-tools = "^1.51.3"
 tiktoken = "^0.3.2"
+poethepoet = "^0.19.0"
 
 [tool.poetry.group.dev.dependencies]
 ddt = "^1.6.0"
 grpcio-testing = "^1.51.3"
 mock = "^5.0.1"
+grpc-stubs = "^1.24.12.1"
+types-protobuf = "^4.22.0.0"
+mypy = "^1.1.1"
+black = "^23.1.0"
+types-mock = "^5.0.0.5"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poe.tasks]
+serve       = "python main.py"
+test        = "python -m unittest discover -s ./tests"
+fmt         = "python -m black --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./ttsvc"
+"lint:mypy" = "python -m mypy ./ttsvc"
+
+[tool.poe.tasks.generate]
+shell = """
+python -m grpc_tools.protoc \\
+  -I./proto \\
+  --python_out=./ttsvc \\
+  --pyi_out=./ttsvc \\
+  --grpc_python_out=./ttsvc \\
+  ./proto/service/v1/tiktoken.proto \\
+&& find ./ttsvc/service/v1 -type f -name "*.py" -exec sed -i '' 's/^from service.v1/from ./g' {} \\;
+"""
