@@ -2,7 +2,9 @@ syntax = "proto3";
 
 package tiktoken.v1;
 
+// TiktokenService provides the gRPC service that wraps the functions of the tiktoken library.
 service TiktokenService {
+  // Returns the number of tokens in a given text string based on the provided encoding.
   rpc NumTokens(NumTokensRequest) returns (NumTokensResponse) {}
 }
 

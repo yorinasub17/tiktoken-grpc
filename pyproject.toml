@@ -10,6 +10,7 @@ packages = [{include = "tiktoken_grpc"}]
 python = "^3.10"
 grpcio = "^1.51.3"
 grpcio-tools = "^1.51.3"
+tiktoken = "^0.3.2"
 
 
 [build-system]
