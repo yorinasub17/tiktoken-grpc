@@ -98,6 +98,18 @@ files = [
 ]
 
 [[package]]
+name = "ddt"
+version = "1.6.0"
+description = "Data-Driven/Decorated Tests"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ddt-1.6.0-py2.py3-none-any.whl", hash = "sha256:e3c93b961a108b4f4d5a6c7f2263513d928baf3bb5b32af8e1c804bfb041141d"},
+    {file = "ddt-1.6.0.tar.gz", hash = "sha256:f71b348731b8c78c3100bffbd951a769fbd439088d1fdbb3841eee019af80acd"},
+]
+
+[[package]]
 name = "grpcio"
 version = "1.51.3"
 description = "HTTP/2-based RPC framework"
@@ -154,6 +166,22 @@ files = [
 
 [package.extras]
 protobuf = ["grpcio-tools (>=1.51.3)"]
+
+[[package]]
+name = "grpcio-testing"
+version = "1.51.3"
+description = "Testing utilities for gRPC Python"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "grpcio-testing-1.51.3.tar.gz", hash = "sha256:9197fe0682618575c8944e8e8b5ae9ac2e1f49343e69b6365c80f04c03e75d60"},
+    {file = "grpcio_testing-1.51.3-py3-none-any.whl", hash = "sha256:3e958d7d58540b78007c38e472771096e5de3d0817bbb28a1afc881401d8b0d8"},
+]
+
+[package.dependencies]
+grpcio = ">=1.51.3"
+protobuf = ">=4.21.6"
 
 [[package]]
 name = "grpcio-tools"
@@ -226,6 +254,23 @@ files = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
     {file = "idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
 ]
+
+[[package]]
+name = "mock"
+version = "5.0.1"
+description = "Rolling backport of unittest.mock for all Pythons"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "mock-5.0.1-py3-none-any.whl", hash = "sha256:c41cfb1e99ba5d341fbcc5308836e7d7c9786d302f995b2c271ce2144dece9eb"},
+    {file = "mock-5.0.1.tar.gz", hash = "sha256:e3ea505c03babf7977fd21674a69ad328053d414f05e6433c30d8fa14a534a6b"},
+]
+
+[package.extras]
+build = ["blurb", "twine", "wheel"]
+docs = ["sphinx"]
+test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "protobuf"
@@ -425,4 +470,4 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "2889a27be4f7ba482b61a35d2cebef23560feeac2a8cdac87ffa4d4afd755286"
+content-hash = "b0a1e1452c808e2029dc05d33a5e468d14d272f6a94b64ede5c2a45bcb863b8f"
