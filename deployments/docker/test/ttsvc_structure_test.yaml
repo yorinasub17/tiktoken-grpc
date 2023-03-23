@@ -1,0 +1,10 @@
+schemaVersion: 2.0.0
+
+commandTests:
+  - name: "sanity check imports for tiktoken-grpc"
+    command: "poetry"
+    args:
+      - run
+      - poe
+      - serve
+      - --help
