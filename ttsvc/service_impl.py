@@ -3,8 +3,8 @@ import logging
 
 import tiktoken
 import grpc.aio
-from .service.v1 import tiktoken_pb2
-from .service.v1 import tiktoken_pb2_grpc
+from .pb2.tiktoken.v1 import tiktoken_pb2
+from .pb2.tiktoken.v1 import tiktoken_pb2_grpc
 
 # Coroutines to be invoked when the event loop is shutting down.
 cleanup_coroutines: List[Coroutine] = []

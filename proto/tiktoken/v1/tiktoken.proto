@@ -11,14 +11,19 @@ service TiktokenService {
 // NumTokensRequest represents a request count the number of tokens in a given text using the requested encoding.
 message NumTokensRequest {
   oneof encoding {
+    // Find the econding directly by name (e.g., cl100k_base).
     string by_name = 1;
+
+    // Find the encoding by the model name (e.g., gpt-3.5-turbo).
     string by_model_name = 2;
   }
 
+  // The input text to count the number of tokens for.
   string text = 3;
 }
 
 // NumTokensResponse represents the result of the NumTokens RPC call.
 message NumTokensResponse {
+  // The number of tokens found in the request text for the given encoding.
   int32 count = 1;
 }

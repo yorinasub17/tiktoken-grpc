@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from . import tiktoken_pb2 as service_dot_v1_dot_tiktoken__pb2
+from . import tiktoken_pb2 as tiktoken_dot_v1_dot_tiktoken__pb2
 
 
 class TiktokenServiceStub(object):
@@ -17,8 +17,8 @@ class TiktokenServiceStub(object):
         """
         self.NumTokens = channel.unary_unary(
                 '/tiktoken.v1.TiktokenService/NumTokens',
-                request_serializer=service_dot_v1_dot_tiktoken__pb2.NumTokensRequest.SerializeToString,
-                response_deserializer=service_dot_v1_dot_tiktoken__pb2.NumTokensResponse.FromString,
+                request_serializer=tiktoken_dot_v1_dot_tiktoken__pb2.NumTokensRequest.SerializeToString,
+                response_deserializer=tiktoken_dot_v1_dot_tiktoken__pb2.NumTokensResponse.FromString,
                 )
 
 
@@ -38,8 +38,8 @@ def add_TiktokenServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'NumTokens': grpc.unary_unary_rpc_method_handler(
                     servicer.NumTokens,
-                    request_deserializer=service_dot_v1_dot_tiktoken__pb2.NumTokensRequest.FromString,
-                    response_serializer=service_dot_v1_dot_tiktoken__pb2.NumTokensResponse.SerializeToString,
+                    request_deserializer=tiktoken_dot_v1_dot_tiktoken__pb2.NumTokensRequest.FromString,
+                    response_serializer=tiktoken_dot_v1_dot_tiktoken__pb2.NumTokensResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -64,7 +64,7 @@ class TiktokenService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/tiktoken.v1.TiktokenService/NumTokens',
-            service_dot_v1_dot_tiktoken__pb2.NumTokensRequest.SerializeToString,
-            service_dot_v1_dot_tiktoken__pb2.NumTokensResponse.FromString,
+            tiktoken_dot_v1_dot_tiktoken__pb2.NumTokensRequest.SerializeToString,
+            tiktoken_dot_v1_dot_tiktoken__pb2.NumTokensResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

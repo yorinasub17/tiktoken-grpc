@@ -1,0 +1,8 @@
+version: v1
+name: buf.build/yorinasub17/tiktoken-grpc-go
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT

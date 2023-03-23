@@ -38,9 +38,9 @@ fmt         = "python -m black --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./ttsvc
 shell = """
 python -m grpc_tools.protoc \\
   -I./proto \\
-  --python_out=./ttsvc \\
-  --pyi_out=./ttsvc \\
-  --grpc_python_out=./ttsvc \\
-  ./proto/service/v1/tiktoken.proto \\
-&& find ./ttsvc/service/v1 -type f -name "*.py" -exec sed -i '' 's/^from service.v1/from ./g' {} \\;
+  --python_out=./ttsvc/pb2 \\
+  --pyi_out=./ttsvc/pb2 \\
+  --grpc_python_out=./ttsvc/pb2 \\
+  ./proto/tiktoken/v1/tiktoken.proto \\
+&& find ./ttsvc/pb2/tiktoken/v1 -type f -name "*.py" -exec sed -i '' 's/^from tiktoken.v1/from ./g' {} \\;
 """
