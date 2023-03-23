@@ -4,7 +4,8 @@ version = "0.1.0"
 description = ""
 authors = ["Yoriyasu Yano <430092+yorinasub17@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "tiktoken_grpc"}]
+license = "BSD-3-Clause"
+packages = [{include = "ttsvc"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

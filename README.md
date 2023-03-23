@@ -14,4 +14,4 @@ Thanks to the OpenAI team for providing the tiktoken encoding files and the
 
 ## License
 
-This project is licensed under the [MIT License](/LICENSE).
+This project is licensed under the [3-clause BSD License](/LICENSE).
