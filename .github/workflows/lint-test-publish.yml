@@ -112,7 +112,7 @@ jobs:
       - name: test docker images
         run: |
           container-structure-test test --image "$LOCAL_APP_IMAGE" \
-            --config ./deployments/docker/test/ttsvc_structure_test.yaml \
+            --config ./deployments/docker/test/ttsvc_structure_test.yaml
         env:
           LOCAL_APP_IMAGE: ${{ steps.build-local.outputs.imageid }}
 
