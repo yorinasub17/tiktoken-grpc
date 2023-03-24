@@ -1,39 +1,222 @@
 # IMPORTANT NOTE
 #
 # Our primary CI environment for tiktoken-grpc is GitHub Actions. We only use CircleCI for access to arm based workers
-# for building the arm64 docker images.
-# DO NOT put new workflows that are not related to building arm64 images in here. Instead, put them in
-# `.github/workflows`.
+# for building the arm64 docker images. However, to make multi-arch image builds more sane, we build both amd64 and
+# arm64 images in circleci. DO NOT put new workflows that are not related to building docker images in here.
+# Instead, put them in `.github/workflows`.
 
 version: 2.1
 
 orbs:
   docker: circleci/docker@2.2.0
+  go: circleci/go@1.7.2
 
 jobs:
-  build_arm:
+  build_amd64:
+    docker:
+      - image: cimg/python:3.11
+    resource_class: small
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: install test utils
+          command: |
+            curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64
+            chmod +x container-structure-test-linux-amd64
+            mv container-structure-test-linux-amd64 "$HOME"/container-structure-test
+            pip install ggshield
+      - docker/build:
+          image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+          tag: amd64-$CIRCLE_SHA1
+          dockerfile: ./deployments/docker/Dockerfile
+          use-buildkit: true
+      - run:
+          name: test docker images
+          command: |
+            "$HOME"/container-structure-test test \
+              --image "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-$CIRCLE_SHA1" \
+              --config ./deployments/docker/test/ttsvc_structure_test.yaml
+      - run:
+          name: scan docker images
+          command: |
+            ggshield secret scan docker \
+              docker.io/"$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-$CIRCLE_SHA1"
+      - when:
+          condition:
+            or:
+              - equal: [ main, << pipeline.git.branch >> ]
+              - matches: { pattern: "^v\\d+\\.\\d+\\.\\d+$", value: << pipeline.git.tag >> }
+          steps:
+            # Push the images to each registry
+            - docker/check:
+                docker-username: CIRCLE_PROJECT_USERNAME
+                docker-password: DOCKER_HUB_TOKEN
+                registry: docker.io
+            - docker/push:
+                image: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+                tag: "amd64-$CIRCLE_SHA1"
+            - run:
+                name: retag for ghcr
+                command: |
+                  docker tag \
+                    "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-$CIRCLE_SHA1" \
+                    "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-$CIRCLE_SHA1"
+            - docker/check:
+                docker-username: CIRCLE_PROJECT_USERNAME
+                docker-password: GITHUB_TOKEN
+                registry: ghcr.io
+            - docker/push:
+                image: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+                tag: "amd64-$CIRCLE_SHA1"
+                registry: ghcr.io
+
+  build_arm64:
     machine:
       image: ubuntu-2204:2023.02.1
+      docker_layer_caching: true
     resource_class: arm.medium
     steps:
       - checkout
+      - run:
+          name: enable experimental features
+          command: |
+            sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
+            sudo systemctl restart docker
       - run:
           name: install test utils
           command: |
             curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-arm64
             chmod +x container-structure-test-linux-arm64
-            mv container-structure-test-linux-arm64 /usr/local/bin/container-structure-test
-            pip install ggshield
+            mv container-structure-test-linux-arm64 "$HOME"/container-structure-test
+            pip3 install ggshield
       - docker/build:
           image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
-          tag: test
+          extra_build_args: --squash
+          tag: arm64-$CIRCLE_SHA1
           dockerfile: ./deployments/docker/Dockerfile
+          use-buildkit: true
+          no_output_timeout: 30m
       - run:
           name: test docker images
           command: |
-            container-structure-test test --image "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME":test \
+            "$HOME"/container-structure-test test \
+              --image "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-$CIRCLE_SHA1" \
               --config ./deployments/docker/test/ttsvc_structure_test.yaml
       - run:
           name: scan docker images
           command: |
-            ggshield secret scan docker docker.io/"$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME":test
+            ggshield secret scan docker \
+              docker.io/"$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-$CIRCLE_SHA1"
+      - docker/check:
+          docker-username: CIRCLE_PROJECT_USERNAME
+          docker-password: DOCKER_HUB_TOKEN
+          registry: docker.io
+      - docker/push:
+          image: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+          tag: "arm64-$CIRCLE_SHA1"
+      - run:
+          name: retag for ghcr
+          command: |
+            docker tag \
+              "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-$CIRCLE_SHA1" \
+              "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-$CIRCLE_SHA1"
+      - docker/check:
+          docker-username: CIRCLE_PROJECT_USERNAME
+          docker-password: GITHUB_TOKEN
+          registry: ghcr.io
+      - docker/push:
+          image: "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+          tag: "arm64-$CIRCLE_SHA1"
+          registry: ghcr.io
+
+  tag:
+    docker:
+      - image: cimg/base:2023.03
+    resource_class: small
+    steps:
+      - setup_remote_docker
+      - run:
+          name: determine docker tags to use
+          command: |
+            tags=( "sha-$CIRCLE_SHA1" )
+            if [[ "$CIRCLE_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+              tags+=( "v${BASH_REMATCH[1]}" "v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" "$CIRCLE_TAG" )
+            else
+              tags+=( "$CIRCLE_BRANCH" )
+            fi
+            taglist=$(printf "%s\n" "${tags[@]}")
+            echo "tags to use $taglist"
+            echo "export DOCKER_TAG_LIST='$taglist'" >> $BASH_ENV
+      - docker/check:
+          docker-username: CIRCLE_PROJECT_USERNAME
+          docker-password: GITHUB_TOKEN
+          registry: ghcr.io
+      - docker/check:
+          docker-username: CIRCLE_PROJECT_USERNAME
+          docker-password: DOCKER_HUB_TOKEN
+          registry: docker.io
+      - run:
+          name: create and push manifest
+          command: |
+            while IFS= read -r tag; do
+              docker manifest create "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:${tag}" \
+                --amend "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-${CIRCLE_SHA1}" \
+                --amend "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-${CIRCLE_SHA1}"
+              docker manifest push "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:${tag}"
+              docker manifest create "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:${tag}" \
+                --amend "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-${CIRCLE_SHA1}" \
+                --amend "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-${CIRCLE_SHA1}"
+              docker manifest push "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:${tag}"
+            done \<<< "$DOCKER_TAG_LIST"
+      # Remove the single arch images.
+      # NOTE: the docker CLI doesn't have a way to delete image tags, so we use a separate tool.
+      - go/install:
+          version: 1.19.2
+          cache: false
+      - run:
+          name: install dkr-rm-tag
+          command: |
+            go install github.com/fensak-io/dkr-rm-tag/cmd/dkr-rm-tag@latest
+      - run:
+          name: remove single arch images now that registry has alternative references
+          command: |
+            /home/circleci/go/bin/dkr-rm-tag \
+              --tag "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-${CIRCLE_SHA1}" \
+              --docker-hub-username "$CIRCLE_PROJECT_USERNAME"
+            /home/circleci/go/bin/dkr-rm-tag \
+              --tag "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-${CIRCLE_SHA1}" \
+              --docker-hub-username "$CIRCLE_PROJECT_USERNAME"
+            /home/circleci/go/bin/dkr-rm-tag \
+              --tag "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:amd64-${CIRCLE_SHA1}"
+            /home/circleci/go/bin/dkr-rm-tag \
+              --tag "ghcr.io/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:arm64-${CIRCLE_SHA1}"
+
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build_amd64:
+          filters:
+            tags:
+              only: /.*/
+      # NOTE: we skip the build_arm64 job except on main and tags, since even on the native arm builder it takes a long
+      # time.
+      - build_arm64:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only:
+                - main
+      - tag:
+          requires:
+            - build_amd64
+            - build_arm64
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only:
+                - main

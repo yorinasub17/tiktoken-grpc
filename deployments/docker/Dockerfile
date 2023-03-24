@@ -15,7 +15,7 @@ RUN mkdir -p /build/build
 WORKDIR /build
 
 # Ideally we don't need to copy in the README, but it's necessary to be able to install the package using pex so...
-COPY ./README.md ./pyproject.toml ./poetry.lock /build
+COPY ./README.md ./pyproject.toml ./poetry.lock /build/
 
 RUN poetry install --no-root
 
@@ -28,6 +28,11 @@ RUN poetry run poe build && ls -lah
 FROM python:3.11.2-slim-bullseye
 
 COPY --from=build /build/build/tiktoken-grpc.pex /app/tiktoken-grpc.pex
+RUN groupadd -r tiktokengrpc && \
+      useradd --no-log-init -r -g tiktokengrpc -d /app tiktokengrpc && \
+      chown -R tiktokengrpc:tiktokengrpc /app
+WORKDIR /app
+USER tiktokengrpc
 EXPOSE 50051
 ENTRYPOINT ["python3", "/app/tiktoken-grpc.pex"]
 CMD ["--no-tls"]
