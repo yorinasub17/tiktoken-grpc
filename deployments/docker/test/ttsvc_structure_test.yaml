@@ -2,9 +2,6 @@ schemaVersion: 2.0.0
 
 commandTests:
   - name: "sanity check imports for tiktoken-grpc"
-    command: "poetry"
+    command: "/app/tiktoken-grpc.pex"
     args:
-      - run
-      - poe
-      - serve
       - --help
