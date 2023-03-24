@@ -162,7 +162,7 @@ jobs:
           file: deployments/docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
 
       - id: maintag
         name: extract main tag
@@ -188,10 +188,12 @@ jobs:
               -a sha=${{ github.sha }} \
               -a run_id=${{ github.run_id }} \
               -a run_attempt=${{ github.run_attempt }} \
-              -a tag=${{ steps.maintag.outputs.maintag }}
+              -a tag=${{ steps.maintag.outputs.maintag }} \
+              -y
           cosign sign \
               yorinasub17/tiktoken-grpc@${{ steps.publish.outputs.digest }} \
               -a sha=${{ github.sha }} \
               -a run_id=${{ github.run_id }} \
               -a run_attempt=${{ github.run_attempt }} \
-              -a tag=${{ steps.maintag.outputs.maintag }}
+              -a tag=${{ steps.maintag.outputs.maintag }} \
+              -y
