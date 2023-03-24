@@ -1,0 +1,39 @@
+# IMPORTANT NOTE
+#
+# Our primary CI environment for tiktoken-grpc is GitHub Actions. We only use CircleCI for access to arm based workers
+# for building the arm64 docker images.
+# DO NOT put new workflows that are not related to building arm64 images in here. Instead, put them in
+# `.github/workflows`.
+
+version: 2.1
+
+orbs:
+  docker: circleci/docker@2.2.0
+
+jobs:
+  build_arm:
+    machine:
+      image: ubuntu-2204:2023.02.1
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: install test utils
+          command: |
+            curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-arm64
+            chmod +x container-structure-test-linux-arm64
+            mv container-structure-test-linux-arm64 /usr/local/bin/container-structure-test
+            pip install ggshield
+      - docker/build:
+          image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+          tag: test
+          dockerfile: ./deployments/docker/Dockerfile
+      - run:
+          name: test docker images
+          command: |
+            container-structure-test test --image "$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME":test \
+              --config ./deployments/docker/test/ttsvc_structure_test.yaml
+      - run:
+          name: scan docker images
+          command: |
+            ggshield secret scan docker docker.io/"$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME":test

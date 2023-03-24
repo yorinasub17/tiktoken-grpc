@@ -5,16 +5,16 @@ description = ""
 authors = ["Yoriyasu Yano <430092+yorinasub17@users.noreply.github.com>"]
 readme = "README.md"
 license = "BSD-3-Clause"
-packages = [{include = "ttsvc"}]
+packages = [{include = "tiktokengrpc"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.12"
 grpcio = "^1.51.3"
 grpcio-tools = "^1.51.3"
 tiktoken = "^0.3.2"
-poethepoet = "^0.19.0"
 
 [tool.poetry.group.dev.dependencies]
+poethepoet = "^0.19.0"
 ddt = "^1.6.0"
 grpcio-testing = "^1.51.3"
 mock = "^5.0.1"
@@ -23,17 +23,30 @@ types-protobuf = "^4.22.0.0"
 mypy = "^1.1.1"
 black = "^23.1.0"
 types-mock = "^5.0.0.5"
+pex = "^2.1.129"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry.scripts]
+tiktoken-grpc = "tiktokengrpc.main:run"
+
 [tool.poe.tasks]
-serve       = "python main.py"
+serve       = "poetry run tiktoken-grpc"
 test        = "python -m unittest discover -s ./tests"
-fmt         = "python -m black --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./ttsvc"
-"lint:mypy" = "python -m mypy ./ttsvc"
-"lint:fmt"  = "python -m black --check --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./ttsvc"
+fmt         = "python -m black --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./tiktokengrpc"
+"lint:mypy" = "python -m mypy ./tiktokengrpc"
+"lint:fmt"  = "python -m black --check --extend-exclude '(_pb2_grpc|_pb2).pyi?$' ./tiktokengrpc"
+
+[tool.poe.tasks.build]
+shell = """
+poetry export --without-hashes -o ./build/requirements.txt \\
+&& echo "tiktoken-grpc @ file://$(pwd)" >> ./build/requirements.txt \\
+&& python -m pex -r ./build/requirements.txt \\
+     -c 'tiktoken-grpc' \\
+     -o ./build/tiktoken-grpc.pex
+"""
 
 [tool.poe.tasks.lint]
 shell = """
@@ -45,9 +58,9 @@ poetry run poe lint:mypy \\
 shell = """
 python -m grpc_tools.protoc \\
   -I./proto \\
-  --python_out=./ttsvc/pb2 \\
-  --pyi_out=./ttsvc/pb2 \\
-  --grpc_python_out=./ttsvc/pb2 \\
+  --python_out=./tiktokengrpc/pb2 \\
+  --pyi_out=./tiktokengrpc/pb2 \\
+  --grpc_python_out=./tiktokengrpc/pb2 \\
   ./proto/tiktoken/v1/tiktoken.proto \\
-&& find ./ttsvc/pb2/tiktoken/v1 -type f -name "*.py" -exec sed -i '' 's/^from tiktoken.v1/from ./g' {} \\;
+&& find ./tiktokengrpc/pb2/tiktoken/v1 -type f -name "*.py" -exec sed -i '' 's/^from tiktoken.v1/from ./g' {} \\;
 """
