@@ -1,4 +1,20 @@
-# tiktoken-grpc
+<h1 align="center">tiktoken-grpc</h1>
+
+<p align="center">
+  <a href="https://github.com/yorinasub17/tiktoken-grpc/blob/main/LICENSE">
+    <img alt="LICENSE" src="https://img.shields.io/github/license/yorinasub17/tiktoken-grpc?style=for-the-badge">
+  </a>
+  <a href="https://github.com/yorinasub17/tiktoken-grpc/actions/workflows/lint-test-publish.yml?query=branch%3Amain">
+    <img alt="main branch CI" src="https://img.shields.io/github/actions/workflow/status/yorinasub17/tiktoken-grpc/lint-test-publish.yml?branch=main&logo=github&label=CI&style=for-the-badge">
+  </a>
+  <a href="https://app.circleci.com/pipelines/github/yorinasub17/tiktoken-grpc?branch=main">
+    <img alt="main branch CircleCI" src="https://img.shields.io/circleci/build/github/yorinasub17/tiktoken-grpc/main?style=for-the-badge">
+  </a>
+  <a href="https://github.com/yorinasub17/tiktoken-grpc/releases/latest">
+    <img alt="latest release" src="https://img.shields.io/github/v/release/yorinasub17/tiktoken-grpc?style=for-the-badge">
+  </a>
+</p>
+
 
 `tiktoken-grpc` is a [gRPC](https://grpc.io) service that wraps the [tiktoken](https://github.com/openai/tiktoken)
 Python library offered by OpenAI.
