@@ -5,8 +5,8 @@ import mock
 import grpc
 from ddt import ddt, data
 
-from ttsvc import TiktokenService
-from ttsvc.pb2.tiktoken.v1 import tiktoken_pb2
+from tiktokengrpc import TiktokenService
+from tiktokengrpc.pb2.tiktoken.v1 import tiktoken_pb2
 
 @dataclass
 class TestData:
