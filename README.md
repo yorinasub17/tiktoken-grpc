@@ -36,8 +36,10 @@ You should now be able to connect to the server using one of [the supported clie
 ### Docker
 
 ```
-docker run --rm -p 50051:50051 ghcr.io/yorinasub17/tiktoken-grpc
+docker run --rm -p 50051:50051 yorinasub17/tiktoken-grpc:main
 ```
+
+(Alternatively, you can use the image from ghcr - `ghcr.io/yorinasub17/tiktoken-grpc:main`)
 
 
 ## Client Libraries
