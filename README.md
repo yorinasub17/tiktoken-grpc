@@ -67,8 +67,3 @@ docker run --rm -p 50051:50051 yorinasub17/tiktoken-grpc:main
 
 Thanks to the OpenAI team for providing the tiktoken encoding files and the
 [tiktoken](https://github.com/openai/tiktoken) library.
-
-
-## License
-
-This project is licensed under the [3-clause BSD License](/LICENSE).
