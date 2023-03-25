@@ -173,7 +173,6 @@ jobs:
       # NOTE: the docker CLI doesn't have a way to delete image tags, so we use a separate tool.
       - go/install:
           version: 1.19.2
-          cache: false
       - run:
           name: install dkr-rm-tag
           command: |
